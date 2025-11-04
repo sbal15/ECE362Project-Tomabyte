@@ -30,5 +30,12 @@ const int SPI_OLED_TX_MOSI = 15;
 
 int main()
 {
+    
+    init_chardisp_pins();
+    cd_init();
+    cd_display1("hello");
+    cd_display2("tomabyte");
 
+    for(;;);
+    return 0;
 }
