@@ -13,6 +13,6 @@ static int color = 0;
 
 
 //main to configure microcontroller
-int main (){
+// int main (){
 
-}
+// }

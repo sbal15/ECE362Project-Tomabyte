@@ -1,104 +1,144 @@
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
-#include "hardware/dma.h"
 #include "hardware/gpio.h"
 #include "chardisp.h"
 
+// External pin definitions
+extern const int SPI_OLED_SCK;
+extern const int SPI_OLED_MOSI;
+extern const int SPI_OLED_CSn;
+extern const int OLED_DC;
 
-//NEED TO CHANGE CODE
+#define OLED_SPI spi1
 
-// Make sure to set these in main.c
-extern const int SPI_DISP_SCK; extern const int SPI_DISP_CSn; extern const int SPI_DISP_TX;
+// OLED display dimensions
+#define OLED_WIDTH 128
+#define OLED_HEIGHT 128
 
-/***************************************************************** */
+// -----------------------------
+// SPI + GPIO setup
+// -----------------------------
+void init_oled_pins() {
+    spi_init(OLED_SPI, 10 * 1000 * 1000); // 10 MHz SPI
+    gpio_set_function(SPI_OLED_SCK, GPIO_FUNC_SPI);
+    gpio_set_function(SPI_OLED_MOSI, GPIO_FUNC_SPI);
 
-// "chardisp" stands for character display, which can be an LCD or OLED
-void init_chardisp_pins() {
-    // fill in
+    gpio_init(SPI_OLED_CSn);
+    gpio_set_dir(SPI_OLED_CSn, GPIO_OUT);
+    gpio_put(SPI_OLED_CSn, 1);
 
-    // part1
-    gpio_set_function(SPI_DISP_SCK, GPIO_FUNC_SPI);
-    gpio_set_function(SPI_DISP_CSn, GPIO_FUNC_SPI);
-    gpio_set_function(SPI_DISP_TX, GPIO_FUNC_SPI);
-
-    //part2
-    // spi_set_baudrate(spi1, 10000);
-    spi_init(spi1,10000);
-    spi_set_format(spi1, 9, 0, 0, SPI_MSB_FIRST);
+    gpio_init(OLED_DC);
+    gpio_set_dir(OLED_DC, GPIO_OUT);
 }
 
-void send_spi_cmd(spi_inst_t* spi, uint16_t value) {
-    // fill in
-
-    while(spi_is_busy(spi));
-
-    uint16_t temp = value;
-    spi_write16_blocking(spi, &temp, 1);
-    
+// -----------------------------
+// Low-level SPI helpers
+// -----------------------------
+void oled_write_cmd(uint8_t cmd) {
+    gpio_put(OLED_DC, 0); // Command mode
+    gpio_put(SPI_OLED_CSn, 0);
+    spi_write_blocking(OLED_SPI, &cmd, 1);
+    gpio_put(SPI_OLED_CSn, 1);
 }
 
-void send_spi_data(spi_inst_t* spi, uint16_t value) {
-    // fill in
-    uint16_t tempVal = value | 0x100;
-    send_spi_cmd(spi, tempVal);
+void oled_write_data(uint8_t data) {
+    gpio_put(OLED_DC, 1); // Data mode
+    gpio_put(SPI_OLED_CSn, 0);
+    spi_write_blocking(OLED_SPI, &data, 1);
+    gpio_put(SPI_OLED_CSn, 1);
 }
 
-void cd_init() {
-    // fill in
+// -----------------------------
+// SSD1351 initialization sequence
+// -----------------------------
+void oled_init() {
+    sleep_ms(10);
 
-    //I NEED HELP FINDING THE VALUES, I DONT UNDERSTAND PLEASE HELP
-    //sleeping 1 ms
-    sleep_ms(1);
-    // send_spi_cmd
-    //8 bit interface, 2 line display mode, 11 dots per char
-    send_spi_cmd(spi1, 0b0000101100);
+    oled_write_cmd(0xFD); // Command lock
+    oled_write_data(0x12);
+    oled_write_cmd(0xFD);
+    oled_write_data(0xB1);
 
-    sleep_us(40);
+    oled_write_cmd(0xAE); // Display off
+    oled_write_cmd(0xB3);
+    oled_write_data(0xF1); // Clock div
 
-    //turn on display, turrn off cursor, turrn off cursor blink
-    send_spi_cmd(spi1, 0b0000001100); 
+    oled_write_cmd(0xCA);
+    oled_write_data(0x7F); // MUX ratio (128)
 
-    sleep_us(40);
+    oled_write_cmd(0xA0);
+    oled_write_data(0x74); // RGB color remap
 
-    send_spi_cmd(spi1,0b0000000001); 
+    oled_write_cmd(0xA1);
+    oled_write_data(0x00); // Column start
 
-    sleep_ms(2);
+    oled_write_cmd(0xA2);
+    oled_write_data(0x00); // Row start
 
-    //move cursor to the right and increment ddram addy by 1, do NOT shift display
-    send_spi_cmd(spi1, 0b0000000110);
+    oled_write_cmd(0xB5);
+    oled_write_data(0x00); // GPIO off
 
-    sleep_us(40);
+    oled_write_cmd(0xAB);
+    oled_write_data(0x01); // Enable internal VDD regulator
 
-    send_spi_cmd(spi1, 0b0000000010);
+    oled_write_cmd(0xB1);
+    oled_write_data(0x32); // Set precharge
 
+    oled_write_cmd(0xBE);
+    oled_write_data(0x05); // VCOMH
+
+    oled_write_cmd(0xA6); // Normal display
+    oled_write_cmd(0xC1);
+    oled_write_data(0xC8);
+    oled_write_data(0x80);
+    oled_write_data(0xC8);
+
+    oled_write_cmd(0xC7);
+    oled_write_data(0x0F); // Contrast
+
+    oled_write_cmd(0xAF); // Display ON
+    sleep_ms(100);
 }
 
-void cd_display1(const char *str) {
-    // fill in
-    send_spi_cmd(spi1, 0b0000000010); //i dont know the value first line of the display
+// -----------------------------
+// Simple drawing helpers
+// -----------------------------
+void oled_set_window(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
+    oled_write_cmd(0x15); // Column
+    oled_write_data(x0);
+    oled_write_data(x1);
 
-    // int len = (strlen(str) < 16) ? strlen(str) : 16;
-    spi_inst_t* spi = spi1;
+    oled_write_cmd(0x75); // Row
+    oled_write_data(y0);
+    oled_write_data(y1);
+}
 
-    for(int i = 0; i < 16; i++)
-    {
-        send_spi_data(spi, str[i]);
+void oled_fill(uint16_t color) {
+    oled_set_window(0, 0, OLED_WIDTH - 1, OLED_HEIGHT - 1);
+    oled_write_cmd(0x5C);
+
+    gpio_put(OLED_DC, 1);
+    gpio_put(SPI_OLED_CSn, 0);
+    uint8_t buffer[2] = { color >> 8, color & 0xFF };
+    for (int i = 0; i < OLED_WIDTH * OLED_HEIGHT; i++)
+        spi_write_blocking(OLED_SPI, buffer, 2);
+    gpio_put(SPI_OLED_CSn, 1);
+}
+
+// Placeholder simple text
+void oled_draw_text(uint8_t x, uint8_t y, const char *text, uint16_t color, uint16_t bg) {
+    // In a real project you’d use a font table — for now just fill a block per letter
+    while (*text) {
+        for (int dy = 0; dy < 8; dy++) {
+            for (int dx = 0; dx < 6; dx++) {
+                uint16_t drawColor = (*text != ' ') ? color : bg;
+                oled_set_window(x + dx, y + dy, x + dx, y + dy);
+                oled_write_cmd(0x5C);
+                oled_write_data(drawColor >> 8);
+                oled_write_data(drawColor & 0xFF);
+            }
+        }
+        x += 6;
+        text++;
     }
-
-
-
 }
-void cd_display2(const char *str) {
-    // fill in
-
-    send_spi_cmd(spi1, 0b11000000); //i dont know the value the secod line of the display
-
-    // int len = (strlen(str) < 16) ? strlen(str) : 16;
-    spi_inst_t* spi = spi1;
-    for(int i = 0; i < 16; i++)
-    {
-        send_spi_data(spi, str[i]);
-    }
-}
-
-/***************************************************************** */

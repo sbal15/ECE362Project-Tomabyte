@@ -1,47 +1,27 @@
 #include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
 #include "pico/stdlib.h"
-// #include "support.h"
-
-// Base library headers ncluded for your convenience.
-// ** You may have to add more depending on your practical. **
-#include "hardware/gpio.h"
-#include "hardware/irq.h"
-#include "hardware/timer.h"
-#include "hardware/adc.h"
-#include "hardware/dma.h"
-#include "hardware/pwm.h"
 #include "hardware/spi.h"
-#include "hardware/uart.h"
-#include "pico/rand.h"
+#include "hardware/gpio.h"
+#include "chardisp.h"
 
-void grader();
-
-//////////////////////////////////////////////////////////////////////////////
-
-// Pins for my oled display
+// Pin definitions for SSD1351
 const int SPI_OLED_SCK = 14;
-const int SPI_OLED_CSn = 13; 
-const int SPI_OLED_TX_MOSI = 15;
+const int SPI_OLED_MOSI = 11;
+const int SPI_OLED_CSn = 13;
+const int OLED_DC = 15;
 
-void init_chardisp_pins();
-void cd_init();
-void cd_display1(const char *str);
-void cd_display2(const char *str);
-void send_spi_cmd(spi_inst_t* spi, uint16_t value);
-void send_spi_data(spi_inst_t* spi, uint16_t value);
+// Using SPI1
+#define OLED_SPI spi1
 
+int main() {
+    stdio_init_all();
+    init_oled_pins();
+    oled_init();
 
-int main()
-{
-    
-    init_chardisp_pins();
-    cd_init();
-    cd_display1("hello");
-    cd_display2("tomabyte");
+    oled_fill(0x0000); // Clear screen (black)
+    oled_draw_text(0, 0, "Hello", 0xFFFF, 0x0000); // White text
+    oled_draw_text(0, 16, "Tomabyte", 0xF800, 0x0000); // Red text
 
-    for(;;);
-    return 0;
+    while (true)
+        tight_loop_contents();
 }
