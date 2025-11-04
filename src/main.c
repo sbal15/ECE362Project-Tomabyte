@@ -26,6 +26,12 @@ const int SPI_OLED_SCK = 14;
 const int SPI_OLED_CSn = 13; 
 const int SPI_OLED_TX_MOSI = 15;
 
+void init_chardisp_pins();
+void cd_init();
+void cd_display1(const char *str);
+void cd_display2(const char *str);
+void send_spi_cmd(spi_inst_t* spi, uint16_t value);
+void send_spi_data(spi_inst_t* spi, uint16_t value);
 
 
 int main()
