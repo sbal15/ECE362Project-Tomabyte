@@ -18,31 +18,31 @@ extern const int OLED_DC;
 // -----------------------------
 // SPI + GPIO setup
 // -----------------------------
-void init_oled_pins() {
+void init_oled_pins() { //initializing SPI peripheral
     spi_init(OLED_SPI, 10 * 1000 * 1000); // 10 MHz SPI
     gpio_set_function(SPI_OLED_SCK, GPIO_FUNC_SPI);
     gpio_set_function(SPI_OLED_MOSI, GPIO_FUNC_SPI);
 
     gpio_init(SPI_OLED_CSn);
-    gpio_set_dir(SPI_OLED_CSn, GPIO_OUT);
-    gpio_put(SPI_OLED_CSn, 1);
+    gpio_set_dir(SPI_OLED_CSn, GPIO_OUT); //CSn = out
+    gpio_put(SPI_OLED_CSn, 1); //set Csn
 
     gpio_init(OLED_DC);
-    gpio_set_dir(OLED_DC, GPIO_OUT);
+    gpio_set_dir(OLED_DC, GPIO_OUT); //DC = out
 }
 
 // -----------------------------
 // Low-level SPI helpers
 // -----------------------------
 void oled_write_cmd(uint8_t cmd) {
-    gpio_put(OLED_DC, 0); // Command mode
+    gpio_put(OLED_DC, 0); // DC: Command mode
     gpio_put(SPI_OLED_CSn, 0);
     spi_write_blocking(OLED_SPI, &cmd, 1);
     gpio_put(SPI_OLED_CSn, 1);
 }
 
 void oled_write_data(uint8_t data) {
-    gpio_put(OLED_DC, 1); // Data mode
+    gpio_put(OLED_DC, 1); // DC: Data mode
     gpio_put(SPI_OLED_CSn, 0);
     spi_write_blocking(OLED_SPI, &data, 1);
     gpio_put(SPI_OLED_CSn, 1);
@@ -103,7 +103,7 @@ void oled_init() {
 // -----------------------------
 // Simple drawing helpers
 // -----------------------------
-void oled_set_window(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
+void oled_set_window(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) { //defines rect region where pixel data is written
     oled_write_cmd(0x15); // Column
     oled_write_data(x0);
     oled_write_data(x1);
@@ -113,7 +113,7 @@ void oled_set_window(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1) {
     oled_write_data(y1);
 }
 
-void oled_fill(uint16_t color) {
+void oled_fill(uint16_t color) { //fills entire screen with one color
     oled_set_window(0, 0, OLED_WIDTH - 1, OLED_HEIGHT - 1);
     oled_write_cmd(0x5C);
 
@@ -127,7 +127,7 @@ void oled_fill(uint16_t color) {
 
 // Placeholder simple text
 void oled_draw_text(uint8_t x, uint8_t y, const char *text, uint16_t color, uint16_t bg) {
-    // In a real project you’d use a font table — for now just fill a block per letter
+    // In a real project we use a font table — for now just fill a block per letter
     while (*text) {
         for (int dy = 0; dy < 8; dy++) {
             for (int dx = 0; dx < 6; dx++) {
