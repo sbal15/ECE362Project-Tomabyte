@@ -23,7 +23,7 @@ void buzzer_init(){
 void buzzer_play(uint freq, uint time){
     uint slice_num = pwm_gpio_to_slice_num(BUZZER_PIN);
 
-    //sound play
+    //play sound
     uint clk_freq = clock_get_hz(clk_sys);
     uint divider = 150; //adjust if needed
     //uint wrap = clk_freq / (divider * freq); -> this is chat
@@ -31,12 +31,22 @@ void buzzer_play(uint freq, uint time){
     pwm_set_clkdiv(slice_num, divider);
     pwm_set_wrap(slice_num, wrap);
     pwm_set_chan_level(slice_num, pwm_gpio_to_channel(BUZZER_PIN), wrap / 2); //50% duty cycle = wrap/2
+    pwm_set_enabled(slice_num, true);
     sleep_ms(time); //time in ms
 
     //stop sound
     pwm_set_chan_level(slice_num, pwm_gpio_to_channel(BUZZER_PIN), 0);
+    //do i have to put false for pwm_set_enabled now?
 }
 
 void happy_sound(){
-    buzzer_play(1000, 30);
+    buzzer_play(1000, 50);
+    buzzer_play(1300, 50);
+    buzzer_play(1600, 50);
+}
+
+void sad_sound(){
+    buzzer_play(700, 50);
+    buzzer_play(500, 50);
+    buzzer_play(300, 50);
 }
