@@ -18,10 +18,14 @@ int main() {
     init_oled_pins();
     oled_init();
 
+    //Hello Tomabyte Test
     oled_fill(0x0000); // Clear screen (black)
-    oled_draw_text(0, 0, "Hello", 0xFFFF, 0x0000); // White text
-    oled_draw_text(0, 16, "Tomabyte", 0xF800, 0x0000); // Red text
+    // oled_draw_text_scaled(0, 16, "F A T", 0xF800, 0x0000, 2);
+    oled_draw_text_scaled(0, 1, "HELLO", 0xF800, 0x0000, 2);
+    oled_draw_text_scaled(0, 64, "TOMABYTE", 0xF800, 0x0000, 2);
+    // oled_draw_text_scaled(0, 16, "Tomabyte", 0xF800, 0x0000, 2);
 
+    //
     while (true)
         tight_loop_contents();
 }
