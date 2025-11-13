@@ -3,6 +3,7 @@
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
 #include "chardisp.h"
+#include "buzzer.h"
 
 // Pin definitions for SSD1351
 const int SPI_OLED_SCK = 14;
@@ -30,4 +31,13 @@ int main() {
     //
     while (true)
         tight_loop_contents();
+
+    // Buzzer test
+    // buzzer_init();
+    // while (true){
+    //     happy_sound();
+    //     sleep_ms(1000);
+    //     sad_sound();
+    //     sleep_ms(1000);
+    // }
 }
