@@ -8,12 +8,24 @@ extern const int SPI_OLED_SCK;
 extern const int SPI_OLED_MOSI;
 extern const int SPI_OLED_CSn;
 extern const int OLED_DC;
+extern const int FEED_BUTTON;
 
 #define OLED_SPI spi1
 
 // OLED display dimensions
 #define OLED_WIDTH 128
 #define OLED_HEIGHT 128
+
+//pet states
+typedef enum {
+    STATE_NORMAL,
+    STATE_HUNGRY
+} PetState;
+
+static PetState pet_state = STATE_NORMAL;
+static alarm_id_t hunger_alarm_id;
+
+
 
 // Basic 6x8 ASCII font (characters 32–127)
 static const uint8_t font6x8[96][6] = {
@@ -294,17 +306,19 @@ const uint16_t pet_sprite_hungry[16 * 16] = {
 
 
 void oled_draw_start_screen() {
-    oled_fill(0xF800); // black background
+    oled_fill(0xFFFF); // white background
 
     //oled_draw_text_scaled(10, 10, "TOMAGOTCHI", 0xFFFF, 0x0000, 2);
 
-    // Draw pet sprite in center
-    oled_draw_sprite_scaled(56, 50, pet_sprite, 16, 16, 4);
-
+    // Draw pet sprite in center(if hungry, draw hungry bitmap)
+    if (pet_state == STATE_NORMAL) {
+        oled_draw_sprite_scaled(56, 50, pet_sprite, 16, 16, 4);
+    } else {
+        oled_draw_sprite_scaled(56, 50, pet_sprite_hungry, 16, 16, 4);
+    }
     //oled_draw_text_scaled(10, 90, "PRESS FEED OR PLAY", 0xF800, 0x0000, 1);
     //oled_draw_text_scaled(10, 105, "TO START", 0xF800, 0x0000, 1);
 }
-
 
 void oled_draw_sprite_scaled(uint8_t x, uint8_t y, const uint16_t *sprite, uint8_t w, uint8_t h, uint8_t scale) {
     for (int row = 0; row < h; row++) {
@@ -326,3 +340,34 @@ void oled_draw_sprite_scaled(uint8_t x, uint8_t y, const uint16_t *sprite, uint8
         }
     }
 }
+
+int64_t hunger_callback(alarm_id_t id, void *user_data) {
+    pet_state = STATE_HUNGRY;
+    oled_draw_start_screen();
+    // sad_sound(); //optional buzzer sound
+    return 0; // one-shot
+}
+
+void reset_hunger_timer() {
+    // Cancel old alarm if active
+    cancel_alarm(hunger_alarm_id);
+    // Schedule new alarm in 60,000 ms (1 min)
+    hunger_alarm_id = add_alarm_in_ms(10000, hunger_callback, NULL, false);
+}
+
+void check_feed_button() {
+    if (!gpio_get(FEED_BUTTON)) { // active low
+        pet_state = STATE_NORMAL;
+        oled_draw_start_screen();
+        reset_hunger_timer();
+        // happy_sound(); //optional happy sound
+        sleep_ms(200); // debounce
+    }
+}
+
+void init_feed_button() {
+    gpio_init(FEED_BUTTON);
+    gpio_set_dir(FEED_BUTTON, GPIO_IN);
+    gpio_pull_up(FEED_BUTTON); // stable high when not pressed
+}
+
