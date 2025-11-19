@@ -65,8 +65,10 @@ void decrease_health_bar()
         health = 0;
     }
 
-    oled_draw_healthbar(10,10,100,12,health);
-    uint64_t next = timer1_hw->timerawl + (30000 * 1000);
+    // oled_draw_healthbar(10,10,100,12,health);
+
+    update_screen();
+    uint64_t next = timer1_hw->timerawl + (5000 * 1000);
     timer1_hw->alarm[0] = (uint32_t) next;
 
 }
@@ -75,6 +77,6 @@ void healthbar_init_timer()
     hw_set_bits(&timer1_hw->inte, (1u << 0));
     irq_set_exclusive_handler(TIMER1_IRQ_0,decrease_health_bar);
     nvic_hw->iser[0] |= 1 << TIMER1_IRQ_0;
-    uint64_t temp = 20000 + timer1_hw->timerawl;
+    uint64_t temp = 5000 * 1000 + timer1_hw->timerawl;
     timer1_hw->alarm[0] = (uint32_t)temp;
 }
