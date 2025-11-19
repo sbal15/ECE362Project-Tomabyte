@@ -2,6 +2,7 @@
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
 #include "chardisp.h"
+#include "healthbar.h"
 
 // External pin definitions
 extern const int SPI_OLED_SCK;
@@ -16,7 +17,7 @@ extern const int OLED_DC;
 #define OLED_HEIGHT 128
 
 //global vairbale or health
-int health = 100;
+// int health = 100;
 
 // Draw a filled rectangle (health bar)
 void oled_draw_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint16_t color) {
