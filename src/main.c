@@ -27,6 +27,7 @@ int main() {
     //oled_fill(0x0000); // Clear screen (black)
     oled_draw_start_screen(); //draws the start creen with the tomagatchi
     reset_hunger_timer();
+    add_alarm_in_ms(500, animation_callback, NULL, true);
     //animate_bounce();
     oled_draw_healthbar(10,10,100,12,health);
     healthbar_init_timer();
