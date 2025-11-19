@@ -25,12 +25,18 @@ int main() {
 
     //Hello Tomabyte Test
     //oled_fill(0x0000); // Clear screen (black)
-    oled_draw_start_screen(); //draws the start creen with the tomagatchi
-    reset_hunger_timer();
-    //animate_bounce();
-    oled_draw_healthbar(10,10,100,12,health);
+    // oled_draw_start_screen(); //draws the start creen with the tomagatchi
+    // reset_hunger_timer();
+    // //animate_bounce();
+    // oled_draw_healthbar(10,10,100,12,health);
+    // healthbar_init_timer();
+
     healthbar_init_timer();
-    
+
+    // Draw initial screen
+    update_screen();
+    reset_hunger_timer();
+
 
 
     //
@@ -48,5 +54,5 @@ int main() {
     //     sleep_ms(1000);
     // }
 
-    
+
 }
