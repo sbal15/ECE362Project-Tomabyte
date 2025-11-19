@@ -36,6 +36,7 @@ int main() {
     healthbar_init_timer();
 
     // Draw initial screen
+    add_alarm_in_ms(500, animation_callback, NULL, true);
     update_screen();
     reset_hunger_timer();
 
