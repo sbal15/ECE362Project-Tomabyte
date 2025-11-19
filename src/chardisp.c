@@ -2,6 +2,7 @@
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
 #include "chardisp.h"
+#include "healthbar.h"
 
 // External pin definitions
 extern const int SPI_OLED_SCK;
@@ -15,6 +16,8 @@ extern const int FEED_BUTTON;
 // OLED display dimensions
 #define OLED_WIDTH 128
 #define OLED_HEIGHT 128
+
+extern int health; // for health bar
 
 //pet states
 typedef enum {
@@ -377,6 +380,8 @@ void oled_draw_start_screen() {
     }
     //oled_draw_text_scaled(10, 90, "PRESS FEED OR PLAY", 0xF800, 0x0000, 1);
     //oled_draw_text_scaled(10, 105, "TO START", 0xF800, 0x0000, 1);
+
+    oled_draw_healthbar(10, 10, 100, 12, health); //draws health bar
 }
 
 void oled_draw_sprite_scaled(uint8_t x, uint8_t y, const uint16_t *sprite, uint8_t w, uint8_t h, uint8_t scale) {
@@ -411,6 +416,8 @@ void reset_hunger_timer() {
     cancel_alarm(hunger_alarm_id);
     // Schedule new alarm in 60,000 ms (1 min)
     hunger_alarm_id = add_alarm_in_ms(10000, hunger_callback, NULL, false);
+    health = 100;
+    oled_draw_healthbar(10,10,100,12,health); //makes the health bar 100 again TEMPORARY
 }
 
 void check_feed_button() {
@@ -429,3 +436,16 @@ void init_feed_button() {
     gpio_pull_up(FEED_BUTTON); // stable high when not pressed
 }
 
+void update_screen()
+{
+    oled_fill(0xFFFF); // clears the sreen
+
+    // Draw pet sprite in center(if hungry, draw hungry bitmap)
+    if (pet_state == STATE_NORMAL) {
+        oled_draw_sprite_scaled(56, 50, pet_sprite, 16, 16, 4);
+    } else {
+        oled_draw_sprite_scaled(56, 50, pet_sprite_hungry, 16, 16, 4);
+    }
+
+    oled_draw_healthbar(10,10,100,12,health);
+}
