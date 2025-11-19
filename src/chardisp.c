@@ -277,7 +277,7 @@ void draw_pet() //renamed update screen to draw pet
 }
 
 void update_screen(){
-    oled_fill(0xFFFF); // clears the screen
+    oled_fill(0xFFFF); // clears the screen (white background)
 
     // Draw pet once (initial frame)
     draw_pet();
