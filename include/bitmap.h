@@ -12,7 +12,6 @@ extern const uint16_t pet_sprite_hungry[16 * 16];
 extern const uint16_t pet_sprite_hungry2[16 * 16];
 extern const uint16_t pet_sprite_dead[16 * 16];
 extern const uint16_t pet_sprite_walk[16 * 16];
-extern const uint16_t pet_sprite_eating[16 * 16];
 extern const uint16_t pet_sprite_eating1[16 * 16];
 extern const uint16_t pet_sprite_eating2[16 * 16];
 extern const uint16_t pet_sprite_eating3[16 * 16];
