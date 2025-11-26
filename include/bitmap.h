@@ -16,5 +16,6 @@ extern const uint16_t pet_sprite_eating1[16 * 16];
 extern const uint16_t pet_sprite_eating2[16 * 16];
 extern const uint16_t pet_sprite_eating3[16 * 16];
 extern const uint16_t pet_sprite_eating4[16 * 16];
+extern const uint16_t pet_sprite_sleeping[16 * 16];
 
 #endif

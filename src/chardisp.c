@@ -35,7 +35,7 @@ typedef enum {
     STATE_DEAD
 } PetState;
 
-static PetState pet_state = STATE_NORMAL;
+PetState pet_state = STATE_NORMAL;
 static alarm_id_t hunger_alarm_id;
 static bool walk_toggle = false; //switch between the default walking bitmaps
 static bool hungry_toggle = false; //switch between the hungry animation bitmaps
@@ -337,6 +337,8 @@ void draw_pet() //renamed update screen to draw pet
         }
     } else if (pet_state == STATE_DEAD){
         oled_draw_sprite_scaled(56, 50, pet_sprite_dead, 16, 16, 4);
+    } else if (pet_state == STATE_SLEEPING){
+        oled_draw_sprite_scaled(56, 50, pet_sprite_sleeping, 16, 16, 4);
     }
 }
 

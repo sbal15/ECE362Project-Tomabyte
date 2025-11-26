@@ -5,6 +5,7 @@
 #include "chardisp.h"
 #include "buzzer.h"
 #include "healthbar.h"
+#include "photoresistor.h"
 
 // Pin definitions for SSD1351
 const int SPI_OLED_SCK = 14;
@@ -23,6 +24,7 @@ int main() {
     oled_init();
     init_feed_button();
     buzzer_init();
+    photoresistor_init();
 
     //Hello Tomabyte Test
     //oled_fill(0x0000); // Clear screen (black)
@@ -47,13 +49,15 @@ int main() {
 
 
 
-    //
+    
     while (true){
         check_feed_button();
         check_death_sound();
         check_hungry_sound();
+        check_photoresistor();
         tight_loop_contents();
     }
+
 
     // Buzzer test
     // buzzer_init();
