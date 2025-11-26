@@ -3,7 +3,7 @@
 #include "hardware/gpio.h"
 #include "chardisp.h"
 #include "healthbar.h"
-#include "bitmap.c"
+#include "bitmap.h"
 
 // External pin definitions
 extern const int SPI_OLED_SCK;
@@ -23,13 +23,17 @@ extern int health; // for health bar
 //pet states
 typedef enum {
     STATE_NORMAL,
-    STATE_HUNGRY
+    STATE_HUNGRY,
+    STATE_EATING,
+    STATE_DEAD
 } PetState;
 
 static PetState pet_state = STATE_NORMAL;
 static alarm_id_t hunger_alarm_id;
 static bool walk_toggle = false; //switch between the default walking bitmaps
 static bool hungry_toggle = false; //switch between the hungry animation bitmaps
+static int eating_frame = 0; //cycle through 4 eating frames
+static alarm_id_t death_alarm_id;
 
 
 // -----------------------------
@@ -216,9 +220,17 @@ void oled_draw_sprite_scaled(uint8_t x, uint8_t y, const uint16_t *sprite, uint8
         }
     }
 }
+int64_t death_callback(alarm_id_t id, void *user_data) {
+    pet_state = STATE_DEAD;
+    update_screen();
+    return 0; // one-shot
+}
+
 int64_t hunger_callback(alarm_id_t id, void *user_data) {
     pet_state = STATE_HUNGRY;
     draw_pet();
+    // Start death timer - pet dies if not fed within 15 seconds
+    death_alarm_id = add_alarm_in_ms(15000, death_callback, NULL, false);
     // sad_sound(); //optional buzzer sound
     return 0; // one-shot
 }
@@ -226,6 +238,7 @@ int64_t hunger_callback(alarm_id_t id, void *user_data) {
 int64_t animation_callback(alarm_id_t id, void *user_data) {
     walk_toggle = !walk_toggle;
     hungry_toggle = !hungry_toggle;
+    eating_frame = (eating_frame + 1) % 4;
     draw_pet();
     return 10000; // repeat every 10000 ms
 }
@@ -240,12 +253,15 @@ void reset_hunger_timer() {
 }
 
 void check_feed_button() {
-    if (!gpio_get(FEED_BUTTON)) { // active low
+    if (!gpio_get(FEED_BUTTON) && pet_state != STATE_DEAD) { // active low, can't feed if dead
+        cancel_alarm(death_alarm_id); // Cancel death timer
+        pet_state = STATE_EATING;
+        draw_pet();
         pet_state = STATE_NORMAL;
         walk_toggle = false;
         hungry_toggle = false;
         health = 100;
-        update_screen();
+        draw_pet();
         reset_hunger_timer();
         // happy_sound(); //optional happy sound
         sleep_ms(200); // debounce
@@ -273,6 +289,18 @@ void draw_pet() //renamed update screen to draw pet
         } else {
             oled_draw_sprite_scaled(56, 50, pet_sprite_hungry2, 16, 16, 4);
         }
+    } else if (pet_state == STATE_EATING) {
+        if (eating_frame == 0) {
+            oled_draw_sprite_scaled(56, 50, pet_sprite_eating1, 16, 16, 4);
+        } else if (eating_frame == 1) {
+            oled_draw_sprite_scaled(56, 50, pet_sprite_eating2, 16, 16, 4);
+        } else if (eating_frame == 2) {
+            oled_draw_sprite_scaled(56, 50, pet_sprite_eating3, 16, 16, 4);
+        } else {
+            oled_draw_sprite_scaled(56, 50, pet_sprite_eating4, 16, 16, 4);
+        }
+    } else if (pet_state == STATE_DEAD){
+        oled_draw_sprite_scaled(56, 50, pet_sprite_dead, 16, 16, 4);
     }
 }
 
@@ -282,7 +310,9 @@ void update_screen(){
     // Draw pet once (initial frame)
     draw_pet();
 
-    //draw health bar
-    oled_draw_healthbar(10,10,100,12,health);
+    //draw health bar only if not dead
+    if (pet_state != STATE_DEAD) {
+        oled_draw_healthbar(10,10,100,12,health);
+    }
 }
 
