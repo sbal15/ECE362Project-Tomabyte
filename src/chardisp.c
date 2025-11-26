@@ -4,6 +4,7 @@
 #include "chardisp.h"
 #include "healthbar.h"
 #include "bitmap.h"
+#include "buzzer.h"
 
 // External pin definitions
 extern const int SPI_OLED_SCK;
@@ -25,6 +26,12 @@ typedef enum {
     STATE_NORMAL,
     STATE_HUNGRY,
     STATE_EATING,
+    STATE_HAPPY,
+    STATE_SAD,
+    STATE_CLEAN,
+    STATE_DIRTY,
+    STATE_SLEEPING,
+    STATE_PET,
     STATE_DEAD
 } PetState;
 
@@ -34,6 +41,9 @@ static bool walk_toggle = false; //switch between the default walking bitmaps
 static bool hungry_toggle = false; //switch between the hungry animation bitmaps
 static int eating_frame = 0; //cycle through 4 eating frames
 static alarm_id_t death_alarm_id;
+static bool play_death_sound = false;
+static bool play_hungry_sound = false;
+static alarm_id_t hungry_sound_alarm_id;
 
 
 // -----------------------------
@@ -222,7 +232,17 @@ void oled_draw_sprite_scaled(uint8_t x, uint8_t y, const uint16_t *sprite, uint8
 }
 int64_t death_callback(alarm_id_t id, void *user_data) {
     pet_state = STATE_DEAD;
+    play_death_sound = true;
     update_screen();
+    return 0; // one-shot
+}
+
+int64_t hungry_sound_callback(alarm_id_t id, void *user_data) {
+    if (pet_state == STATE_HUNGRY) {
+        play_hungry_sound = true;
+        // Schedule next hungry sound in 3 seconds
+        hungry_sound_alarm_id = add_alarm_in_ms(3000, hungry_sound_callback, NULL, false);
+    }
     return 0; // one-shot
 }
 
@@ -231,7 +251,8 @@ int64_t hunger_callback(alarm_id_t id, void *user_data) {
     draw_pet();
     // Start death timer - pet dies if not fed within 15 seconds
     death_alarm_id = add_alarm_in_ms(15000, death_callback, NULL, false);
-    // sad_sound(); //optional buzzer sound
+    // Start hungry sound timer
+    hungry_sound_alarm_id = add_alarm_in_ms(1000, hungry_sound_callback, NULL, false);
     return 0; // one-shot
 }
 
@@ -252,10 +273,26 @@ void reset_hunger_timer() {
     oled_draw_healthbar(10,10,100,12,health); //makes the health bar 100 again TEMPORARY
 }
 
+void check_death_sound() {
+    if (play_death_sound) {
+        sad_sound();
+        play_death_sound = false;
+    }
+}
+
+void check_hungry_sound() {
+    if (play_hungry_sound) {
+        bounce_sound();
+        play_hungry_sound = false;
+    }
+}
+
 void check_feed_button() {
     if (!gpio_get(FEED_BUTTON) && pet_state != STATE_DEAD) { // active low, can't feed if dead
         cancel_alarm(death_alarm_id); // Cancel death timer
+        cancel_alarm(hungry_sound_alarm_id); // Cancel hungry sound timer
         pet_state = STATE_EATING;
+        chirp_sound();
         draw_pet();
         pet_state = STATE_NORMAL;
         walk_toggle = false;
@@ -263,7 +300,6 @@ void check_feed_button() {
         health = 100;
         draw_pet();
         reset_hunger_timer();
-        // happy_sound(); //optional happy sound
         sleep_ms(200); // debounce
     }
 }

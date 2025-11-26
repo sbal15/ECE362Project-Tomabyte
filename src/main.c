@@ -22,6 +22,7 @@ int main() {
     init_oled_pins();
     oled_init();
     init_feed_button();
+    buzzer_init();
 
     //Hello Tomabyte Test
     //oled_fill(0x0000); // Clear screen (black)
@@ -49,6 +50,8 @@ int main() {
     //
     while (true){
         check_feed_button();
+        check_death_sound();
+        check_hungry_sound();
         tight_loop_contents();
     }
 
