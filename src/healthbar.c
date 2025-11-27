@@ -19,6 +19,9 @@ extern const int OLED_DC;
 //global vairbale or health
 // int health = 100;
 
+// Flag set by timer ISR to request a healthbar redraw from the main loop
+volatile bool healthbar_update_needed = false;
+
 // Draw a filled rectangle (health bar)
 void oled_draw_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint16_t color) {
     oled_set_window(x, y, x + w - 1, y + h - 1);
@@ -59,15 +62,17 @@ void decrease_health_bar()
 {
     hw_clear_bits(&timer1_hw->intr, 1u<<0);
 
-    health-= 20;
-    if(health<0)
-    {
+    // Only update the health variable and request a screen update.
+    // Avoid calling any display/SPI/GPIO functions from ISR context.
+    health -= 20;
+    if (health < 0) {
         health = 0;
     }
 
-    // oled_draw_healthbar(10,10,100,12,health);
+    // Inform main loop to redraw the screen.
+    healthbar_update_needed = true;
 
-    update_screen();
+    // Re-arm the timer for the next alarm
     uint64_t next = timer1_hw->timerawl + (5000 * 1000);
     timer1_hw->alarm[0] = (uint32_t) next;
 

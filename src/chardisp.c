@@ -205,24 +205,6 @@ void oled_draw_text_scaled(uint8_t x, uint8_t y, const char *text, uint16_t colo
     }
 }
 
-
-// void oled_draw_start_screen() {
-//     oled_fill(0xFFFF); // white background
-
-//     //oled_draw_text_scaled(10, 10, "TOMAGOTCHI", 0xFFFF, 0x0000, 2);
-
-//     // Draw pet sprite in center(if hungry, draw hungry bitmap)
-//     if (pet_state == STATE_NORMAL) {
-//         oled_draw_sprite_scaled(56, 50, pet_sprite, 16, 16, 4);
-//     } else {
-//         oled_draw_sprite_scaled(56, 50, pet_sprite_hungry, 16, 16, 4);
-//     }
-//     //oled_draw_text_scaled(10, 90, "PRESS FEED OR PLAY", 0xF800, 0x0000, 1);
-//     //oled_draw_text_scaled(10, 105, "TO START", 0xF800, 0x0000, 1);
-
-//     oled_draw_healthbar(10, 10, 100, 12, health); //draws health bar
-// }
-
 void oled_draw_sprite_scaled(uint8_t x, uint8_t y, const uint16_t *sprite, uint8_t w, uint8_t h, uint8_t scale) {
     for (int row = 0; row < h; row++) {
         for (int col = 0; col < w; col++) {
@@ -373,7 +355,7 @@ void check_clean_button() {
         cancel_alarm(death_alarm_id); // Cancel death timer
         pet_state = STATE_CLEAN;
         giggle_sound();
-        health = (health < 80) ? health + 30 : 100; // Add health, max 100
+        health = (health < 70) ? health + 30 : 100; // Add health, max 100
         update_screen(); // Update health bar
         sleep_ms(500); // Show cleaning for a moment
         pet_state = STATE_NORMAL;
@@ -446,7 +428,7 @@ void check_feed_button() {
         cancel_alarm(hungry_sound_alarm_id); // Cancel hungry sound timer
         pet_state = STATE_EATING;
         chirp_sound();
-        health = (health < 80) ? health + 40 : 100; // Add health, max 100
+        health = (health < 60) ? health + 40 : 100; // Add health, max 100
         update_screen();
         pet_state = STATE_HAPPY;
         update_screen();
