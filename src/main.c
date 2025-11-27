@@ -13,6 +13,8 @@ const int SPI_OLED_MOSI = 11;
 const int SPI_OLED_CSn = 13;
 const int OLED_DC = 15;
 const int FEED_BUTTON = 16;
+const int PET_BUTTON = 10;
+const int CLEAN_BUTTON = 12;
 
 // Using SPI1
 #define OLED_SPI spi1
@@ -23,8 +25,10 @@ int main() {
     init_oled_pins();
     oled_init();
     init_feed_button();
+    init_pet_button();
     buzzer_init();
     photoresistor_init();
+    init_clean_button();
 
     //Hello Tomabyte Test
     //oled_fill(0x0000); // Clear screen (black)
@@ -42,16 +46,18 @@ int main() {
     add_alarm_in_ms(500, animation_callback, NULL, true);
     update_screen();
     reset_hunger_timer();
+    reset_sadness_timer();
 
-    // Draw initial screen
+    // idk if this is needed, probably not lol
     update_screen();
     reset_hunger_timer();
-
-
+    reset_sadness_timer();
 
     
     while (true){
         check_feed_button();
+        check_pet_button();
+        check_clean_button();
         check_death_sound();
         check_hungry_sound();
         check_photoresistor();

@@ -1,32 +1,45 @@
 #include "pico/stdlib.h"
-#include "hardware/gpio.h"
+#include "hardware/adc.h"
 #include <stdio.h>
 
-#define PHOTORESISTOR_PIN 12
+#define PHOTORESISTOR_ADC_CHANNEL 1  
 
-// External pet state access
-extern int pet_state;
-#define STATE_NORMAL 0
-#define STATE_SLEEPING 7
-#define STATE_DEAD 9
+// External pet state access - must match chardisp.c enum
+typedef enum {
+    STATE_NORMAL,
+    STATE_HUNGRY,
+    STATE_EATING,
+    STATE_HAPPY,
+    STATE_SAD,
+    STATE_CLEAN,
+    STATE_DIRTY,
+    STATE_SLEEPING,
+    STATE_PET,
+    STATE_DEAD
+} PetState;
 
-int curr_state = 0;
+extern PetState pet_state;
+PetState curr_state = STATE_NORMAL;
 
 void photoresistor_init() {
-    gpio_init(PHOTORESISTOR_PIN);
-    gpio_set_dir(PHOTORESISTOR_PIN, GPIO_IN);
+    adc_init();
+    adc_gpio_init(41);
+    adc_select_input(PHOTORESISTOR_ADC_CHANNEL);
 }
 
 void check_photoresistor() {
-    if (gpio_get(PHOTORESISTOR_PIN)) {
-        // printf("Light detected - waking up\n");
+    if (pet_state == STATE_DEAD) {
+        return;
+    }
+    
+    uint16_t adc_value = adc_read();
+    if (adc_value > 1000) {
         if (pet_state == STATE_SLEEPING) {
             pet_state = curr_state;
         }
     } else {
-        // printf("Dark - going to sleep\n");
-        if (pet_state != STATE_DEAD) {
-            if (pet_state != STATE_SLEEPING) curr_state = pet_state;
+        if (pet_state != STATE_SLEEPING) {
+            curr_state = pet_state;
             pet_state = STATE_SLEEPING;
         }
     }

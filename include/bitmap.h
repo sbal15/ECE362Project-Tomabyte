@@ -17,5 +17,14 @@ extern const uint16_t pet_sprite_eating2[16 * 16];
 extern const uint16_t pet_sprite_eating3[16 * 16];
 extern const uint16_t pet_sprite_eating4[16 * 16];
 extern const uint16_t pet_sprite_sleeping[16 * 16];
+extern const uint16_t pet_sprite_happy1[16 * 16];
+extern const uint16_t pet_sprite_happy2[16 * 16];
+extern const uint16_t pet_sprite_sad[16 * 16];
+extern const uint16_t pet_sprite_pet1[16 * 16];
+extern const uint16_t pet_sprite_pet2[16 * 16];
+extern const uint16_t pet_sprite_clean1[16 * 16];
+extern const uint16_t pet_sprite_clean2[16 * 16];
+extern const uint16_t pet_sprite_dirty1[16 * 16];
+extern const uint16_t pet_sprite_dirty2[16 * 16];
 
 #endif
