@@ -47,11 +47,7 @@ int main() {
     update_screen();
     reset_hunger_timer();
     reset_sadness_timer();
-
-    // idk if this is needed, probably not lol
-    update_screen();
-    reset_hunger_timer();
-    reset_sadness_timer();
+    reset_dirty_timer();
 
     
     while (true){
@@ -60,6 +56,8 @@ int main() {
         check_clean_button();
         check_death_sound();
         check_hungry_sound();
+        check_dirty_sound();
+        check_sad_sound();
         check_photoresistor();
         tight_loop_contents();
     }

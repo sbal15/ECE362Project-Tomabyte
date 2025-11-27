@@ -82,3 +82,21 @@ void sad_sound(){
         sleep_ms(20);
     }
 }
+
+void fart_sound(){
+    buzzer_play(200, 100);
+    buzzer_play(150, 120);
+    buzzer_play(100, 150);
+    sleep_ms(50);
+    buzzer_play(80, 200);
+}
+
+void really_sad_sound(){
+    buzzer_play(600, 300);
+    sleep_ms(100);
+    buzzer_play(500, 400);
+    sleep_ms(150);
+    buzzer_play(400, 500);
+    sleep_ms(200);
+    buzzer_play(300, 600);
+}

@@ -9,5 +9,7 @@ void chirp_sound();
 void bounce_sound();
 void twinkle_sound();
 void giggle_sound();
+void fart_sound();
+void really_sad_sound();
 
 #endif

@@ -44,8 +44,12 @@ static alarm_id_t death_alarm_id;
 static alarm_id_t hungry_sound_alarm_id;
 static alarm_id_t sadness_alarm_id;
 static alarm_id_t dirty_alarm_id;
+static alarm_id_t dirty_sound_alarm_id;
+static alarm_id_t sadness_sound_alarm_id;
 static bool play_death_sound = false;
 static bool play_hungry_sound = false;
+static bool play_dirty_sound = false;
+static bool play_sadness_sound = false;
 static bool walk_toggle = false; //switch between the default walking bitmaps
 static bool hungry_toggle = false; //switch between the hungry animation bitmaps
 static bool happy_toggle = false; //happy skip type animation hopefully
@@ -239,45 +243,82 @@ void oled_draw_sprite_scaled(uint8_t x, uint8_t y, const uint16_t *sprite, uint8
         }
     }
 }
-int64_t death_callback(alarm_id_t id, void *user_data) {
-    pet_state = STATE_DEAD;
-    play_death_sound = true;
-    update_screen();
-    return 0; // one-shot
-}
 
 int64_t hungry_sound_callback(alarm_id_t id, void *user_data) {
     if (pet_state == STATE_HUNGRY) {
         play_hungry_sound = true;
         // Schedule next hungry sound in 3 seconds
-        hungry_sound_alarm_id = add_alarm_in_ms(300, hungry_sound_callback, NULL, false);
+        hungry_sound_alarm_id = add_alarm_in_ms(3000, hungry_sound_callback, NULL, false);
     }
-    return 0; // one-shot
+    return 0;
+}
+
+int64_t dirty_sound_callback(alarm_id_t id, void *user_data) {
+    if (pet_state == STATE_DIRTY) {
+        play_dirty_sound = true;
+        dirty_sound_alarm_id = add_alarm_in_ms(3000, dirty_sound_callback, NULL, false);
+    }
+    return 0;
+}
+
+int64_t sad_sound_callback(alarm_id_t id, void *user_data) {
+    if (pet_state == STATE_SAD) {
+        play_sadness_sound = true;
+        sadness_sound_alarm_id = add_alarm_in_ms(3000, sad_sound_callback, NULL, false);
+    }
+    return 0;
+}
+
+int64_t death_callback(alarm_id_t id, void *user_data) {
+    pet_state = STATE_DEAD;
+    play_death_sound = true;
+    update_screen();
+    return 0;
 }
 
 int64_t dirty_callback(alarm_id_t id, void *user_data) {
-    if (pet_state != STATE_DEAD) {
-        pet_state = STATE_DIRTY;
-        health -= 15;
-        if (health <= 0) {
-            death_alarm_id = add_alarm_in_ms(10000, death_callback, NULL, false);
-        }
-        update_screen(); // Update health bar
+    pet_state = STATE_DIRTY;
+    health -= 15;
+    if (health <= 0) {
+        death_alarm_id = add_alarm_in_ms(10000, death_callback, NULL, false);
     }
-    return 0; // one-shot
+    update_screen(); // Update health bar
+    // Start dirty sound timer immediately
+    dirty_sound_alarm_id = add_alarm_in_ms(1000, dirty_sound_callback, NULL, false);
+    // if (pet_state != STATE_DEAD) {
+    //     pet_state = STATE_DIRTY;
+    //     health -= 15;
+    //     if (health <= 0) {
+    //         death_alarm_id = add_alarm_in_ms(10000, death_callback, NULL, false);
+    //     }
+    //     update_screen(); // Update health bar
+    //     // Start dirty sound timer
+    //     dirty_sound_alarm_id = add_alarm_in_ms(30000, dirty_sound_callback, NULL, false);
+    // }
+    return 0;
 }
 
 int64_t sadness_callback(alarm_id_t id, void *user_data) {
-    if (pet_state != STATE_DEAD){
-        pet_state = STATE_SAD;
-        health -= 10;
-        if (health <= 0) {
-            death_alarm_id = add_alarm_in_ms(10000, death_callback, NULL, false);
-        }
-        update_screen(); // Update health bar
+    pet_state = STATE_SAD;
+    health -= 10;
+    if (health <= 0) {
+        death_alarm_id = add_alarm_in_ms(10000, death_callback, NULL, false);
     }
+    update_screen(); // Update health bar
+    // Start sadness sound timer immediately
+    sadness_sound_alarm_id = add_alarm_in_ms(1000, sad_sound_callback, NULL, false);
+    // if (pet_state != STATE_DEAD){
+    //     pet_state = STATE_SAD;
+    //     health -= 10;
+    //     if (health <= 0) {
+    //         death_alarm_id = add_alarm_in_ms(10000, death_callback, NULL, false);
+    //     }
+    //     update_screen(); // Update health bar
+    //     // Start sadness sound timer
+    //     sadness_sound_alarm_id = add_alarm_in_ms(30000, sad_sound_callback, NULL, false);
+    // }
     
-    return 0; // one-shot
+    return 0;
 }
 
 int64_t hunger_callback(alarm_id_t id, void *user_data) {
@@ -287,9 +328,9 @@ int64_t hunger_callback(alarm_id_t id, void *user_data) {
         death_alarm_id = add_alarm_in_ms(10000, death_callback, NULL, false);
     }
     update_screen(); // Update health bar
-    // Start hungry sound timer
-    hungry_sound_alarm_id = add_alarm_in_ms(10000, hungry_sound_callback, NULL, false);
-    return 0; // one-shot
+    // Start hungry sound timer immediately
+    hungry_sound_alarm_id = add_alarm_in_ms(1000, hungry_sound_callback, NULL, false);
+    return 0;
 }
 
 int64_t animation_callback(alarm_id_t id, void *user_data) {
@@ -362,6 +403,20 @@ void check_hungry_sound() {
     }
 }
 
+void check_dirty_sound() {
+    if(play_dirty_sound){
+        fart_sound();
+        play_dirty_sound = false;
+    }
+}
+
+void check_sad_sound(){
+    if (play_sadness_sound) {
+        really_sad_sound();
+        play_sadness_sound = false;
+    }
+}
+
 void check_pet_button() {
     if (!gpio_get(PET_BUTTON) && pet_state != STATE_DEAD) { // active low, can't play if dead
         cancel_alarm(death_alarm_id); // Cancel death timer
@@ -386,7 +441,7 @@ void init_pet_button() {
 }
 
 void check_feed_button() {
-    if (!gpio_get(FEED_BUTTON) && pet_state != STATE_DEAD && pet_state == STATE_HUNGRY) { // active low, can't feed if dead
+    if (!gpio_get(FEED_BUTTON) && pet_state != STATE_DEAD) { // active low, can't feed if dead
         cancel_alarm(death_alarm_id); // Cancel death timer
         cancel_alarm(hungry_sound_alarm_id); // Cancel hungry sound timer
         pet_state = STATE_EATING;
