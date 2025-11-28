@@ -58,6 +58,11 @@ int main() {
         check_sleepy_sound();
         check_sad_sound();
         check_sleep_photoresistor();
+        // If the health timer ISR requested an update, do the (safe) redraw here.
+        if (healthbar_update_needed) {
+            update_screen();
+            healthbar_update_needed = false;
+        }
         tight_loop_contents();
     }
 

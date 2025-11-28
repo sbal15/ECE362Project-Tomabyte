@@ -19,6 +19,9 @@ extern const int OLED_DC;
 //global vairbale or health
 // int health = 100;
 
+// Flag set by timer ISR to request a healthbar redraw from the main loop
+volatile bool healthbar_update_needed = false;
+
 // Draw a filled rectangle (health bar)
 void oled_draw_rect(uint8_t x, uint8_t y, uint8_t w, uint8_t h, uint16_t color) {
     oled_set_window(x, y, x + w - 1, y + h - 1);
