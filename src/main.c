@@ -5,7 +5,6 @@
 #include "chardisp.h"
 #include "buzzer.h"
 #include "healthbar.h"
-#include "photoresistor.h"
 
 // Pin definitions for SSD1351
 const int SPI_OLED_SCK = 14;
