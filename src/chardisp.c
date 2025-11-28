@@ -1,6 +1,7 @@
 #include "pico/stdlib.h"
 #include "hardware/spi.h"
 #include "hardware/gpio.h"
+#include "hardware/adc.h"
 #include "chardisp.h"
 #include "healthbar.h"
 #include "bitmap.h"
@@ -34,22 +35,23 @@ typedef enum {
     STATE_CLEAN,
     STATE_DIRTY,
     STATE_SLEEPING,
+    STATE_SLEEPY,
     STATE_PET,
     STATE_DEAD
 } PetState;
 
 PetState pet_state = STATE_NORMAL;
-static alarm_id_t hunger_alarm_id;
+static alarm_id_t random_timer_id;
 static alarm_id_t death_alarm_id;
 static alarm_id_t hungry_sound_alarm_id;
-static alarm_id_t sadness_alarm_id;
-static alarm_id_t dirty_alarm_id;
 static alarm_id_t dirty_sound_alarm_id;
 static alarm_id_t sadness_sound_alarm_id;
+static alarm_id_t sleepy_sound_alarm_id;
 static bool play_death_sound = false;
 static bool play_hungry_sound = false;
 static bool play_dirty_sound = false;
 static bool play_sadness_sound = false;
+static bool play_sleepy_sound = false;
 static bool walk_toggle = false; //switch between the default walking bitmaps
 static bool hungry_toggle = false; //switch between the hungry animation bitmaps
 static bool happy_toggle = false; //happy skip type animation hopefully
@@ -57,6 +59,7 @@ static bool pet_toggle = false;
 static bool clean_toggle = false;
 static bool dirty_toggle = false;
 static int eating_frame = 0; //cycle through 4 eating frames
+static uint32_t random_seed = 12345; // Simple PRNG seed
 
 
 // -----------------------------
@@ -247,7 +250,6 @@ void oled_draw_sprite_scaled(uint8_t x, uint8_t y, const uint16_t *sprite, uint8
 int64_t hungry_sound_callback(alarm_id_t id, void *user_data) {
     if (pet_state == STATE_HUNGRY) {
         play_hungry_sound = true;
-        // Schedule next hungry sound in 3 seconds
         hungry_sound_alarm_id = add_alarm_in_ms(3000, hungry_sound_callback, NULL, false);
     }
     return 0;
@@ -269,6 +271,14 @@ int64_t sad_sound_callback(alarm_id_t id, void *user_data) {
     return 0;
 }
 
+int64_t sleepy_sound_callback(alarm_id_t id, void *user_data) {
+    if (pet_state == STATE_SLEEPY) {
+        play_sleepy_sound = true;
+        sleepy_sound_alarm_id = add_alarm_in_ms(3000, sleepy_sound_callback, NULL, false);
+    }
+    return 0;
+}
+
 int64_t death_callback(alarm_id_t id, void *user_data) {
     pet_state = STATE_DEAD;
     play_death_sound = true;
@@ -276,60 +286,61 @@ int64_t death_callback(alarm_id_t id, void *user_data) {
     return 0;
 }
 
-int64_t dirty_callback(alarm_id_t id, void *user_data) {
-    pet_state = STATE_DIRTY;
-    health -= 15;
-    if (health <= 0) {
-        death_alarm_id = add_alarm_in_ms(10000, death_callback, NULL, false);
+int64_t random_timer_callback(alarm_id_t id, void *user_data) {
+    if (pet_state == STATE_NORMAL) {
+        // Better randomization using simple PRNG
+        random_seed = random_seed * 1103515245 + 12345;
+        random_seed ^= to_ms_since_boot(get_absolute_time());
+        uint32_t random_val = (random_seed >> 16) % 4;
+        
+        switch (random_val) {
+            case 0:
+                pet_state = STATE_HUNGRY;
+                health -= 20;
+                hungry_sound_alarm_id = add_alarm_in_ms(1000, hungry_sound_callback, NULL, false);
+                break;
+            case 1:
+                pet_state = STATE_SAD;
+                health -= 10;
+                sadness_sound_alarm_id = add_alarm_in_ms(1000, sad_sound_callback, NULL, false);
+                break;
+            case 2:
+                pet_state = STATE_DIRTY;
+                health -= 15;
+                dirty_sound_alarm_id = add_alarm_in_ms(1000, dirty_sound_callback, NULL, false);
+                break;
+            case 3:
+                pet_state = STATE_SLEEPY;
+                health -= 5;
+                sleepy_sound_alarm_id = add_alarm_in_ms(1000, sleepy_sound_callback, NULL, false);
+                break;
+        }
+        
+        if (health <= 0) {
+            death_alarm_id = add_alarm_in_ms(10000, death_callback, NULL, false);
+        }
+        update_screen();
+        
+        // Set timeout to return to normal after 5 seconds if no button pressed
+        random_timer_id = add_alarm_in_ms(5000, auto_reset_callback, NULL, false);
+    } else {
+        // Continue timer cycle
+        random_timer_id = add_alarm_in_ms(1000, auto_reset_callback, NULL, false);
     }
-    update_screen(); // Update health bar
-    // Start dirty sound timer immediately
-    dirty_sound_alarm_id = add_alarm_in_ms(1000, dirty_sound_callback, NULL, false);
-    // if (pet_state != STATE_DEAD) {
-    //     pet_state = STATE_DIRTY;
-    //     health -= 15;
-    //     if (health <= 0) {
-    //         death_alarm_id = add_alarm_in_ms(10000, death_callback, NULL, false);
-    //     }
-    //     update_screen(); // Update health bar
-    //     // Start dirty sound timer
-    //     dirty_sound_alarm_id = add_alarm_in_ms(30000, dirty_sound_callback, NULL, false);
-    // }
     return 0;
 }
 
-int64_t sadness_callback(alarm_id_t id, void *user_data) {
-    pet_state = STATE_SAD;
-    health -= 10;
-    if (health <= 0) {
-        death_alarm_id = add_alarm_in_ms(10000, death_callback, NULL, false);
+int64_t auto_reset_callback(alarm_id_t id, void *user_data) {
+    if (pet_state != STATE_NORMAL && pet_state != STATE_DEAD) {
+        if (pet_state == STATE_HUNGRY) health -= 20;
+        if (pet_state == STATE_SAD) health -= 10;
+        if (pet_state == STATE_DIRTY) health -= 15;
+        if (pet_state == STATE_SLEEPY) health -= 5;
+        update_screen();
+        
+        // Restart the random timer
+        random_timer_id = add_alarm_in_ms(1000, random_timer_callback, NULL, false);
     }
-    update_screen(); // Update health bar
-    // Start sadness sound timer immediately
-    sadness_sound_alarm_id = add_alarm_in_ms(1000, sad_sound_callback, NULL, false);
-    // if (pet_state != STATE_DEAD){
-    //     pet_state = STATE_SAD;
-    //     health -= 10;
-    //     if (health <= 0) {
-    //         death_alarm_id = add_alarm_in_ms(10000, death_callback, NULL, false);
-    //     }
-    //     update_screen(); // Update health bar
-    //     // Start sadness sound timer
-    //     sadness_sound_alarm_id = add_alarm_in_ms(30000, sad_sound_callback, NULL, false);
-    // }
-    
-    return 0;
-}
-
-int64_t hunger_callback(alarm_id_t id, void *user_data) {
-    pet_state = STATE_HUNGRY;
-    health -= 20;
-    if (health <= 0) {
-        death_alarm_id = add_alarm_in_ms(10000, death_callback, NULL, false);
-    }
-    update_screen(); // Update health bar
-    // Start hungry sound timer immediately
-    hungry_sound_alarm_id = add_alarm_in_ms(1000, hungry_sound_callback, NULL, false);
     return 0;
 }
 
@@ -343,50 +354,6 @@ int64_t animation_callback(alarm_id_t id, void *user_data) {
     eating_frame = (eating_frame + 1) % 4;
     draw_pet();
     return 10000; // repeat every 10000 ms
-}
-
-void reset_hunger_timer() {
-    // Cancel old alarm if active
-    cancel_alarm(hunger_alarm_id);
-    // Schedule new alarm in 60,000 ms (1 s)
-    hunger_alarm_id = add_alarm_in_ms(10000, hunger_callback, NULL, false);
-    // health = 100;
-    // oled_draw_healthbar(10,10,100,12,health); //makes the health bar 100 again TEMPORARY
-}
-
-void reset_sadness_timer() {
-    // Cancel old sadness alarm if active
-    cancel_alarm(sadness_alarm_id);
-    // Schedule sadness timer - pet gets sad after 30 seconds
-    sadness_alarm_id = add_alarm_in_ms(30000, sadness_callback, NULL, false);
-}
-
-void reset_dirty_timer() {
-    // Cancel old dirty alarm if active
-    cancel_alarm(dirty_alarm_id);
-    // Schedule dirty timer - pet gets dirty after 45 seconds
-    dirty_alarm_id = add_alarm_in_ms(45000, dirty_callback, NULL, false);
-}
-
-void check_clean_button() {
-    if (!gpio_get(CLEAN_BUTTON) && pet_state != STATE_DEAD) { // active low, can't clean if dead
-        cancel_alarm(death_alarm_id); // Cancel death timer
-        pet_state = STATE_CLEAN;
-        giggle_sound();
-        health = (health < 80) ? health + 30 : 100; // Add health, max 100
-        update_screen(); // Update health bar
-        sleep_ms(500); // Show cleaning for a moment
-        pet_state = STATE_NORMAL;
-        update_screen(); // Update health bar
-        reset_dirty_timer();
-        sleep_ms(200); // debounce
-    }
-}
-
-void init_clean_button() {
-    gpio_init(CLEAN_BUTTON);
-    gpio_set_dir(CLEAN_BUTTON, GPIO_IN);
-    gpio_pull_up(CLEAN_BUTTON); // stable high when not pressed
 }
 
 void check_death_sound() {
@@ -417,9 +384,44 @@ void check_sad_sound(){
     }
 }
 
-void check_pet_button() {
-    if (!gpio_get(PET_BUTTON) && pet_state != STATE_DEAD) { // active low, can't play if dead
+void check_sleepy_sound(){
+    if(play_sleepy_sound){
+        sleepy_sound();
+        play_sleepy_sound = false;
+    }
+}
+
+void start_random_timer() {
+    cancel_alarm(random_timer_id);
+    random_timer_id = add_alarm_in_ms(1000, random_timer_callback, NULL, false);
+}
+
+void check_clean_button() {
+    if (!gpio_get(CLEAN_BUTTON) && pet_state != STATE_DEAD && pet_state == STATE_DIRTY) { // active low, can't clean if dead
         cancel_alarm(death_alarm_id); // Cancel death timer
+        cancel_alarm(dirty_sound_alarm_id); // Cancel dirty sounds
+        pet_state = STATE_CLEAN;
+        giggle_sound();
+        health = (health < 80) ? health + 30 : 100; // Add health, max 100
+        update_screen(); // Update health bar
+        sleep_ms(500); // Show cleaning for a moment
+        pet_state = STATE_NORMAL;
+        update_screen(); // Update health bar
+        start_random_timer();
+        sleep_ms(200); // debounce
+    }
+}
+
+void init_clean_button() {
+    gpio_init(CLEAN_BUTTON);
+    gpio_set_dir(CLEAN_BUTTON, GPIO_IN);
+    gpio_pull_up(CLEAN_BUTTON); // stable high when not pressed
+}
+
+void check_pet_button() {
+    if (!gpio_get(PET_BUTTON) && pet_state != STATE_DEAD && pet_state == STATE_SAD) { // active low, can't play if dead
+        cancel_alarm(death_alarm_id); // Cancel death timer
+        cancel_alarm(sadness_sound_alarm_id); // Cancel sad sounds
         pet_state = STATE_PET;
         happy_sound();
         health = (health < 80) ? health + 20 : 100; // Add health, max 100
@@ -429,7 +431,7 @@ void check_pet_button() {
         sleep_ms(500);
         pet_state = STATE_NORMAL;
         update_screen();
-        reset_sadness_timer();
+        start_random_timer();
         sleep_ms(200); // debounce
     }
 }
@@ -441,7 +443,7 @@ void init_pet_button() {
 }
 
 void check_feed_button() {
-    if (!gpio_get(FEED_BUTTON) && pet_state != STATE_DEAD) { // active low, can't feed if dead
+    if (!gpio_get(FEED_BUTTON) && pet_state != STATE_DEAD && pet_state == STATE_HUNGRY) { // active low, can't feed if dead
         cancel_alarm(death_alarm_id); // Cancel death timer
         cancel_alarm(hungry_sound_alarm_id); // Cancel hungry sound timer
         pet_state = STATE_EATING;
@@ -454,7 +456,7 @@ void check_feed_button() {
         walk_toggle = false;
         hungry_toggle = false;
         update_screen();
-        reset_hunger_timer();
+        start_random_timer();
         sleep_ms(200); // debounce
     }
 }
@@ -463,6 +465,31 @@ void init_feed_button() {
     gpio_init(FEED_BUTTON);
     gpio_set_dir(FEED_BUTTON, GPIO_IN);
     gpio_pull_up(FEED_BUTTON); // stable high when not pressed
+}
+
+void check_sleep_photoresistor(){
+    uint16_t adc_value = adc_read();
+    if (adc_value < 1000 && pet_state != STATE_DEAD && pet_state == STATE_SLEEPY) {
+        cancel_alarm(death_alarm_id);
+        cancel_alarm(sleepy_sound_alarm_id);
+        pet_state = STATE_SLEEPING;
+        energized_sound();
+        health = (health < 90) ? health + 10 : 100;
+        update_screen();
+        sleep_ms(1000);
+        pet_state = STATE_HAPPY;
+        update_screen();
+        pet_state = STATE_NORMAL;
+        update_screen();
+        start_random_timer();
+        sleep_ms(200);
+    }
+}
+
+void init_sleepy_photoresistor(){
+    adc_init();
+    adc_gpio_init(41);
+    adc_select_input(1); // Use ADC0 for photoresistor
 }
 
 void check_health(){
@@ -528,6 +555,8 @@ void draw_pet() //renamed update screen to draw pet
         } else {
             oled_draw_sprite_scaled(56, 50, pet_sprite_clean2, 16, 16, 4);
         }
+    } else if (pet_state == STATE_SLEEPY){
+        oled_draw_sprite_scaled(56, 50, pet_sprite_sleepy, 16, 16, 4);
     }
 }
 

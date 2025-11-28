@@ -27,7 +27,7 @@ int main() {
     init_feed_button();
     init_pet_button();
     buzzer_init();
-    photoresistor_init();
+    init_sleepy_photoresistor();
     init_clean_button();
 
     //Hello Tomabyte Test
@@ -45,20 +45,20 @@ int main() {
     // Draw initial screen
     add_alarm_in_ms(500, animation_callback, NULL, true);
     update_screen();
-    reset_hunger_timer();
-    reset_sadness_timer();
-    reset_dirty_timer();
+    start_random_timer();
 
     
     while (true){
+        check_health();
         check_feed_button();
         check_pet_button();
         check_clean_button();
         check_death_sound();
         check_hungry_sound();
         check_dirty_sound();
+        check_sleepy_sound();
         check_sad_sound();
-        check_photoresistor();
+        check_sleep_photoresistor();
         tight_loop_contents();
     }
 

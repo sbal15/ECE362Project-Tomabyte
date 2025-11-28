@@ -100,3 +100,21 @@ void really_sad_sound(){
     sleep_ms(200);
     buzzer_play(300, 600);
 }
+
+void sleepy_sound(){
+    buzzer_play(300, 200);
+    sleep_ms(100);
+    buzzer_play(250, 250);
+    sleep_ms(150);
+    buzzer_play(200, 300);
+}
+
+void energized_sound(){
+    buzzer_play(1000, 50);
+    buzzer_play(1200, 50);
+    buzzer_play(1400, 50);
+    buzzer_play(1600, 50);
+    buzzer_play(1800, 50);
+    buzzer_play(2000, 100);
+}
+

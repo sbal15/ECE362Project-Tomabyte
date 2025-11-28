@@ -55,28 +55,21 @@ void oled_draw_healthbar(uint8_t x, uint8_t y, uint8_t width, uint8_t height, in
     oled_draw_rect(x, y, fill_width, height, bar_color);
 }
 
-void decrease_health_bar()
-{
-    hw_clear_bits(&timer1_hw->intr, 1u<<0);
+// Disabled - health is now managed by random timer in chardisp.c
+// void decrease_health_bar()
+// {
+//     hw_clear_bits(&timer1_hw->intr, 1u<<0);
+//     health-= 20;
+//     if(health<0)
+//     {
+//         health = 0;
+//     }
+//     update_screen();
+//     uint64_t next = timer1_hw->timerawl + (5000 * 1000);
+//     timer1_hw->alarm[0] = (uint32_t) next;
+// }
 
-    health-= 20;
-    if(health<0)
-    {
-        health = 0;
-    }
-
-    // oled_draw_healthbar(10,10,100,12,health);
-
-    update_screen();
-    uint64_t next = timer1_hw->timerawl + (5000 * 1000);
-    timer1_hw->alarm[0] = (uint32_t) next;
-
-}
 void healthbar_init_timer()
 {
-    hw_set_bits(&timer1_hw->inte, (1u << 0));
-    irq_set_exclusive_handler(TIMER1_IRQ_0,decrease_health_bar);
-    nvic_hw->iser[0] |= 1 << TIMER1_IRQ_0;
-    uint64_t temp = 5000 * 1000 + timer1_hw->timerawl;
-    timer1_hw->alarm[0] = (uint32_t)temp;
+    // Disabled - health management moved to random timer system
 }

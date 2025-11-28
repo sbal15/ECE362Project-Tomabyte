@@ -11,5 +11,7 @@ void twinkle_sound();
 void giggle_sound();
 void fart_sound();
 void really_sad_sound();
+void sleepy_sound();
+void energized_sound();
 
 #endif
