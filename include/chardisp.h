@@ -15,5 +15,6 @@ void draw_pet();
 void draw_start_screen();
 void start_random_timer();
 void update_screen();
+void check_reset_button();
 
 #endif

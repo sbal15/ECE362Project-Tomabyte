@@ -48,6 +48,7 @@ int main() {
         check_feed_button();
         check_pet_button();
         check_clean_button();
+        check_reset_button(); //added (11/29)
         check_death_sound();
         check_hungry_sound();
         check_dirty_sound();

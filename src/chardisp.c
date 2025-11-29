@@ -464,6 +464,16 @@ void init_feed_button() {
     gpio_pull_up(FEED_BUTTON); // stable high when not pressed
 }
 
+void check_reset_button() {
+    if (!gpio_get(PICO_DEFAULT_LED_PIN) && pet_state == STATE_DEAD) { // Reset button pressed when dead
+        pet_state = STATE_START_SCREEN;
+        health = 100;
+        startscreen_frame = 0;
+        update_screen();
+        sleep_ms(200); // debounce
+    }
+}
+
 void check_sleep_photoresistor(){
     uint16_t adc_value = adc_read();
     if (adc_value < 1000 && pet_state != STATE_DEAD && pet_state == STATE_SLEEPY) {
@@ -543,6 +553,8 @@ void draw_pet() //renamed update screen to draw pet
             oled_draw_sprite_scaled(56, 80, pet_sprite_eating4, 16, 16, 4);
         }
     } else if (pet_state == STATE_DEAD){
+        oled_draw_text_scaled(16, 30, "GAME OVER", 0x0000, 0xFFFF, 2);
+        oled_draw_text_scaled(4, 50, "Press RESET to start over", 0x0000, 0xFFFF, 1);
         oled_draw_sprite_scaled(56, 80, pet_sprite_dead, 16, 16, 4);
     } else if (pet_state == STATE_SLEEPING){
         oled_draw_sprite_scaled(56, 80, pet_sprite_sleeping, 16, 16, 4);
@@ -578,8 +590,18 @@ void draw_pet() //renamed update screen to draw pet
 }
 
 void update_screen(){
-    if (pet_state == STATE_START_SCREEN) { //draw start screen
+    if (pet_state == STATE_START_SCREEN) {
         draw_start_screen();
+    } else if (pet_state == STATE_DEAD) {
+        oled_fill(0xFFFF); // white background
+        
+        // Write "GAME OVER" text in top half
+        oled_draw_text_scaled(16, 30, "GAME OVER", 0x0000, 0xFFFF, 2);
+        // Write "Press RESET to start over"
+        oled_draw_text_scaled(4, 50, "Press RESET to start over", 0x0000, 0xFFFF, 1);
+        
+        // Draw dead pet sprite in bottom half
+        oled_draw_sprite_scaled(56, 80, pet_sprite_dead, 16, 16, 4);
     } else {
         oled_fill(0xFFFF); // clears the screen (white background)
 
