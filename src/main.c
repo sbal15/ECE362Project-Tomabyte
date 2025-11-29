@@ -38,8 +38,8 @@ int main() {
     // // oled_draw_healthbar(10,10,100,12,health);
     // healthbar_init_timer();
 
-    // Draw initial start screen
-    //add_alarm_in_ms(500, animation_callback, NULL, true);
+    // Draw initial start screen and start animation
+    add_alarm_in_ms(500, animation_callback, NULL, true);
     update_screen();
 
     

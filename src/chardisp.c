@@ -38,8 +38,7 @@ typedef enum {
     STATE_SLEEPING,
     STATE_SLEEPY,
     STATE_PET,
-    STATE_DEAD,
-    STATE_START_SCREEN
+    STATE_DEAD
 } PetState;
 
 PetState pet_state = STATE_START_SCREEN;
@@ -61,6 +60,7 @@ static bool pet_toggle = false;
 static bool clean_toggle = false;
 static bool dirty_toggle = false;
 static int eating_frame = 0; //cycle through 4 eating frames
+static int startscreen_frame = 0; //cycle through 4 start screen frames
 static uint32_t random_seed = 12345; // Simple PRNG seed
 
 
@@ -329,7 +329,10 @@ int64_t auto_reset_callback(alarm_id_t id, void *user_data) {
 }
 
 int64_t animation_callback(alarm_id_t id, void *user_data) {
-    if (pet_state != STATE_START_SCREEN) { //need to check if its start screen
+    if (pet_state == STATE_START_SCREEN) {
+        startscreen_frame = (startscreen_frame + 1) % 4;
+        draw_start_screen();
+    } else {
         walk_toggle = !walk_toggle;
         hungry_toggle = !hungry_toggle;
         happy_toggle = !happy_toggle;
@@ -497,14 +500,21 @@ void check_health(){
 void draw_start_screen() {
     oled_fill(0xFFFF); // white background
     
-    // Write "TOMABYTE" text in top half, centered
+    // Write "TOMABYTE" text in top half
     oled_draw_text_scaled(16, 30, "TOMABYTE", 0x0000, 0xFFFF, 2);
-    
     // Write "Press FEED to start" below it
     oled_draw_text_scaled(8, 50, "Press FEED to start", 0x0000, 0xFFFF, 1);
     
-    // Draw pet sprite in bottom half, centered
-    oled_draw_sprite_scaled(56, 80, pet_sprite, 16, 16, 4);
+    // Animate pet sprite in bottom half
+    if (startscreen_frame == 0) {
+        oled_draw_sprite_scaled(56, 80, pet_sprite_startscreen_default, 16, 16, 4);
+    } else if (startscreen_frame == 1) {
+        oled_draw_sprite_scaled(56, 80, pet_sprite_startscreen_jump, 16, 16, 4);
+    } else if (startscreen_frame == 2) {
+        oled_draw_sprite_scaled(56, 80, pet_sprite_startscreen_default, 16, 16, 4);
+    } else {
+        oled_draw_sprite_scaled(56, 80, pet_sprite_startscreen_squash, 16, 16, 4);
+    }
 }
 
 void draw_pet() //renamed update screen to draw pet
@@ -512,58 +522,58 @@ void draw_pet() //renamed update screen to draw pet
     // Draw pet sprite in center(if hungry, draw hungry bitmap)
     if (pet_state == STATE_NORMAL) {
         if (walk_toggle) {
-            oled_draw_sprite_scaled(56, 50, pet_sprite, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite, 16, 16, 4);
         } else {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_walk, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_walk, 16, 16, 4);
         }
     } else if (pet_state == STATE_HUNGRY) {
         if (hungry_toggle) {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_hungry, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_hungry, 16, 16, 4);
         } else {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_hungry2, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_hungry2, 16, 16, 4);
         }
     } else if (pet_state == STATE_EATING) {
         if (eating_frame == 0) {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_eating1, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_eating1, 16, 16, 4);
         } else if (eating_frame == 1) {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_eating2, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_eating2, 16, 16, 4);
         } else if (eating_frame == 2) {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_eating3, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_eating3, 16, 16, 4);
         } else {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_eating4, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_eating4, 16, 16, 4);
         }
     } else if (pet_state == STATE_DEAD){
-        oled_draw_sprite_scaled(56, 50, pet_sprite_dead, 16, 16, 4);
+        oled_draw_sprite_scaled(56, 80, pet_sprite_dead, 16, 16, 4);
     } else if (pet_state == STATE_SLEEPING){
-        oled_draw_sprite_scaled(56, 50, pet_sprite_sleeping, 16, 16, 4);
+        oled_draw_sprite_scaled(56, 80, pet_sprite_sleeping, 16, 16, 4);
     } else if (pet_state == STATE_HAPPY){
         if (happy_toggle) {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_happy1, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_happy1, 16, 16, 4);
         } else {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_happy2, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_happy2, 16, 16, 4);
         }
     } else if (pet_state == STATE_SAD){
-        oled_draw_sprite_scaled(56, 50, pet_sprite_sad, 16, 16, 4);
+        oled_draw_sprite_scaled(56, 80, pet_sprite_sad, 16, 16, 4);
     } else if (pet_state == STATE_PET){
         if (pet_toggle) {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_pet1, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_pet1, 16, 16, 4);
         } else {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_pet2, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_pet2, 16, 16, 4);
         }
     } else if (pet_state == STATE_DIRTY){
         if (dirty_toggle) {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_dirty1, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_dirty1, 16, 16, 4);
         } else {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_dirty2, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_dirty2, 16, 16, 4);
         }
     } else if (pet_state == STATE_CLEAN){
         if (clean_toggle) {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_clean1, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_clean1, 16, 16, 4);
         } else {
-            oled_draw_sprite_scaled(56, 50, pet_sprite_clean2, 16, 16, 4);
+            oled_draw_sprite_scaled(56, 80, pet_sprite_clean2, 16, 16, 4);
         }
     } else if (pet_state == STATE_SLEEPY){
-        oled_draw_sprite_scaled(56, 50, pet_sprite_sleepy, 16, 16, 4);
+        oled_draw_sprite_scaled(56, 80, pet_sprite_sleepy, 16, 16, 4);
     }
 }
 

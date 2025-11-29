@@ -27,5 +27,8 @@ extern const uint16_t pet_sprite_clean2[16 * 16];
 extern const uint16_t pet_sprite_dirty1[16 * 16];
 extern const uint16_t pet_sprite_dirty2[16 * 16];
 extern const uint16_t pet_sprite_sleepy[16 * 16];
+extern const uint16_t pet_sprite_startscreen_default[16 * 16];
+extern const uint16_t pet_sprite_startscreen_jump[16 * 16];
+extern const uint16_t pet_sprite_startscreen_squash[16 * 16];
 
 #endif
