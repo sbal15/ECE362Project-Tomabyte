@@ -27,6 +27,7 @@ extern int health; // for health bar
 
 //pet states
 typedef enum {
+    STATE_START_SCREEN,
     STATE_NORMAL,
     STATE_HUNGRY,
     STATE_EATING,
@@ -37,10 +38,11 @@ typedef enum {
     STATE_SLEEPING,
     STATE_SLEEPY,
     STATE_PET,
-    STATE_DEAD
+    STATE_DEAD,
+    STATE_START_SCREEN
 } PetState;
 
-PetState pet_state = STATE_NORMAL;
+PetState pet_state = STATE_START_SCREEN;
 static alarm_id_t random_timer_id;
 static alarm_id_t death_alarm_id;
 static alarm_id_t hungry_sound_alarm_id;
@@ -327,14 +329,16 @@ int64_t auto_reset_callback(alarm_id_t id, void *user_data) {
 }
 
 int64_t animation_callback(alarm_id_t id, void *user_data) {
-    walk_toggle = !walk_toggle;
-    hungry_toggle = !hungry_toggle;
-    happy_toggle = !happy_toggle;
-    pet_toggle = !pet_toggle;
-    clean_toggle = !clean_toggle;
-    dirty_toggle = !dirty_toggle;
-    eating_frame = (eating_frame + 1) % 4;
-    draw_pet();
+    if (pet_state != STATE_START_SCREEN) { //need to check if its start screen
+        walk_toggle = !walk_toggle;
+        hungry_toggle = !hungry_toggle;
+        happy_toggle = !happy_toggle;
+        pet_toggle = !pet_toggle;
+        clean_toggle = !clean_toggle;
+        dirty_toggle = !dirty_toggle;
+        eating_frame = (eating_frame + 1) % 4;
+        draw_pet();
+    }
     return 10000; // repeat every 10000 ms
 }
 
@@ -425,21 +429,29 @@ void init_pet_button() {
 }
 
 void check_feed_button() {
-    if (!gpio_get(FEED_BUTTON) && pet_state != STATE_DEAD && pet_state == STATE_HUNGRY) { // active low, can't feed if dead
-        cancel_alarm(death_alarm_id); // Cancel death timer
-        cancel_alarm(hungry_sound_alarm_id); // Cancel hungry sound timer
-        pet_state = STATE_EATING;
-        chirp_sound();
-        health = (health < 60) ? health + 40 : 100; // Add health, max 100
-        update_screen();
-        pet_state = STATE_HAPPY;
-        update_screen();
-        pet_state = STATE_NORMAL;
-        walk_toggle = false;
-        hungry_toggle = false;
-        update_screen();
-        start_random_timer();
-        sleep_ms(200); // debounce
+    if (!gpio_get(FEED_BUTTON)) { // active low
+        if (pet_state == STATE_START_SCREEN) { //user presses FEED button to start game
+            pet_state = STATE_NORMAL;
+            add_alarm_in_ms(500, animation_callback, NULL, true);
+            update_screen();
+            start_random_timer();
+            sleep_ms(200); // debounce
+        } else if (pet_state != STATE_DEAD && pet_state == STATE_HUNGRY) { // can't feed if dead
+            cancel_alarm(death_alarm_id); // Cancel death timer
+            cancel_alarm(hungry_sound_alarm_id); // Cancel hungry sound timer
+            pet_state = STATE_EATING;
+            chirp_sound();
+            health = (health < 60) ? health + 40 : 100; // Add health, max 100
+            update_screen();
+            pet_state = STATE_HAPPY;
+            update_screen();
+            pet_state = STATE_NORMAL;
+            walk_toggle = false;
+            hungry_toggle = false;
+            update_screen();
+            start_random_timer();
+            sleep_ms(200); // debounce
+        }
     }
 }
 
@@ -480,6 +492,19 @@ void check_health(){
         play_death_sound = true;
         update_screen();
     }
+}
+
+void draw_start_screen() {
+    oled_fill(0xFFFF); // white background
+    
+    // Write "TOMABYTE" text in top half, centered
+    oled_draw_text_scaled(16, 30, "TOMABYTE", 0x0000, 0xFFFF, 2);
+    
+    // Write "Press FEED to start" below it
+    oled_draw_text_scaled(8, 50, "Press FEED to start", 0x0000, 0xFFFF, 1);
+    
+    // Draw pet sprite in bottom half, centered
+    oled_draw_sprite_scaled(56, 80, pet_sprite, 16, 16, 4);
 }
 
 void draw_pet() //renamed update screen to draw pet
@@ -543,14 +568,18 @@ void draw_pet() //renamed update screen to draw pet
 }
 
 void update_screen(){
-    oled_fill(0xFFFF); // clears the screen (white background)
+    if (pet_state == STATE_START_SCREEN) { //draw start screen
+        draw_start_screen();
+    } else {
+        oled_fill(0xFFFF); // clears the screen (white background)
 
-    // Draw pet once (initial frame)
-    draw_pet();
+        // Draw pet once (initial frame)
+        draw_pet();
 
-    //draw health bar only if not dead
-    if (pet_state != STATE_DEAD) {
-        oled_draw_healthbar(10,10,100,12,health);
+        //draw health bar only if not dead
+        if (pet_state != STATE_DEAD) {
+            oled_draw_healthbar(10,10,100,12,health);
+        }
     }
 }
 

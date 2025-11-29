@@ -11,7 +11,7 @@ const int SPI_OLED_SCK = 14;
 const int SPI_OLED_MOSI = 11;
 const int SPI_OLED_CSn = 13;
 const int OLED_DC = 15;
-const int FEED_BUTTON = 16;
+const int FEED_BUTTON = 16; //also START button
 const int PET_BUTTON = 10;
 const int CLEAN_BUTTON = 12;
 
@@ -28,6 +28,7 @@ int main() {
     buzzer_init();
     init_sleepy_photoresistor();
     init_clean_button();
+    healthbar_init_timer();
 
     //Hello Tomabyte Test
     //oled_fill(0x0000); // Clear screen (black)
@@ -37,14 +38,9 @@ int main() {
     // // oled_draw_healthbar(10,10,100,12,health);
     // healthbar_init_timer();
 
-    // healthbar_init_timer();
-
-    healthbar_init_timer();
-
-    // Draw initial screen
-    add_alarm_in_ms(500, animation_callback, NULL, true);
+    // Draw initial start screen
+    //add_alarm_in_ms(500, animation_callback, NULL, true);
     update_screen();
-    start_random_timer();
 
     
     while (true){
@@ -60,16 +56,4 @@ int main() {
         check_sleep_photoresistor();
         tight_loop_contents();
     }
-
-
-    // Buzzer test
-    // buzzer_init();
-    // while (true){
-    //     happy_sound();
-    //     sleep_ms(1000);
-    //     sad_sound();
-    //     sleep_ms(1000);
-    // }
-
-
 }
