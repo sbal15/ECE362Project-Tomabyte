@@ -4,7 +4,7 @@
 
 
 // Basic 6x8 ASCII font (characters 32–127)
-static const uint8_t font6x8[96][6] = {
+const uint8_t font6x8[96][6] = {
     // Each char = 6 bytes (columns), LSB at top
     {0x00,0x00,0x00,0x00,0x00,0x00}, // 32 ' '
     {0x00,0x00,0x5F,0x00,0x00,0x00}, // 33 '!'

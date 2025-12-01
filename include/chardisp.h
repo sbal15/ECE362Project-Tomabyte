@@ -17,5 +17,22 @@ void draw_start_screen_sprite();
 void start_random_timer();
 void update_screen();
 void check_reset_button();
+void init_feed_button();
+void init_pet_button();
+void init_clean_button();
+void init_sleepy_photoresistor();
+void check_health();
+void check_feed_button();
+void check_pet_button();
+void check_clean_button();
+void check_death_sound();
+void check_hungry_sound();
+void check_dirty_sound();
+void check_sleepy_sound();
+void check_sad_sound();
+void check_sleep_photoresistor();
+void check_start_game();
+
+extern alarm_id_t animation_timer_id;
 
 #endif

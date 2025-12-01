@@ -39,11 +39,11 @@ int main() {
     // healthbar_init_timer();
 
     // Draw initial start screen and start animation
-    add_alarm_in_ms(500, animation_callback, NULL, true);
+    animation_timer_id = add_alarm_in_ms(500, animation_callback, NULL, true);
     update_screen();
 
-    
     while (true){
+        check_start_game();
         check_health();
         check_feed_button();
         check_pet_button();
