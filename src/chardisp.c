@@ -331,7 +331,7 @@ int64_t auto_reset_callback(alarm_id_t id, void *user_data) {
 int64_t animation_callback(alarm_id_t id, void *user_data) {
     if (pet_state == STATE_START_SCREEN) {
         startscreen_frame = (startscreen_frame + 1) % 4;
-        draw_start_screen();
+        draw_start_screen_sprite();
     } else {
         walk_toggle = !walk_toggle;
         hungry_toggle = !hungry_toggle;
@@ -510,20 +510,25 @@ void check_health(){
 void draw_start_screen() {
     oled_fill(0xFFFF); // white background
     
-    // Write "TOMABYTE" text in top half
-    oled_draw_text_scaled(16, 30, "TOMABYTE", 0x0000, 0xFFFF, 2);
+    // Write "TOMABYTE" text higher up
+    oled_draw_text_scaled(16, 10, "TOMABYTE", 0x0000, 0xFFFF, 2);
     // Write "Press FEED to start" below it
-    oled_draw_text_scaled(8, 50, "Press FEED to start", 0x0000, 0xFFFF, 1);
+    oled_draw_text_scaled(8, 30, "Press FEED to start", 0x0000, 0xFFFF, 1);
     
-    // Animate pet sprite in bottom half
+    // Draw initial sprite
+    draw_start_screen_sprite();
+}
+
+void draw_start_screen_sprite() {
+    // Animate pet sprite in bottom half with smaller size
     if (startscreen_frame == 0) {
-        oled_draw_sprite_scaled(56, 80, pet_sprite_startscreen_default, 16, 16, 4);
+        oled_draw_sprite_scaled(64, 70, pet_sprite_startscreen_default, 16, 16, 3);
     } else if (startscreen_frame == 1) {
-        oled_draw_sprite_scaled(56, 80, pet_sprite_startscreen_jump, 16, 16, 4);
+        oled_draw_sprite_scaled(64, 70, pet_sprite_startscreen_jump, 16, 16, 3);
     } else if (startscreen_frame == 2) {
-        oled_draw_sprite_scaled(56, 80, pet_sprite_startscreen_default, 16, 16, 4);
+        oled_draw_sprite_scaled(64, 70, pet_sprite_startscreen_default, 16, 16, 3);
     } else {
-        oled_draw_sprite_scaled(56, 80, pet_sprite_startscreen_squash, 16, 16, 4);
+        oled_draw_sprite_scaled(64, 70, pet_sprite_startscreen_squash, 16, 16, 3);
     }
 }
 
@@ -596,9 +601,9 @@ void update_screen(){
         oled_fill(0xFFFF); // white background
         
         // Write "GAME OVER" text in top half
-        oled_draw_text_scaled(16, 30, "GAME OVER", 0x0000, 0xFFFF, 2);
+        oled_draw_text_scaled(16, 10, "GAME OVER", 0x0000, 0xFFFF, 2);
         // Write "Press RESET to start over"
-        oled_draw_text_scaled(4, 50, "Press RESET to start over", 0x0000, 0xFFFF, 1);
+        oled_draw_text_scaled(8, 30, "Press RESET to start over", 0x0000, 0xFFFF, 1);
         
         // Draw dead pet sprite in bottom half
         oled_draw_sprite_scaled(56, 80, pet_sprite_dead, 16, 16, 4);

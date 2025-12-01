@@ -13,6 +13,7 @@ int64_t animation_callback(alarm_id_t id, void *user_data);
 int64_t auto_reset_callback(alarm_id_t id, void *user_data);
 void draw_pet();
 void draw_start_screen();
+void draw_start_screen_sprite();
 void start_random_timer();
 void update_screen();
 void check_reset_button();
