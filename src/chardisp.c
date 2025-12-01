@@ -466,6 +466,7 @@ void check_reset_button() {
         pet_state = STATE_START_SCREEN;
         health = 100;
         startscreen_frame = 0;
+        oled_fill(0xFFFF); // Clear death screen (get rid of death text)
         update_screen();
         sleep_ms(200);
     }
