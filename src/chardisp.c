@@ -525,7 +525,7 @@ void draw_start_screen() {
     // Write "TOMABYTE" text higher up
     oled_draw_text_scaled(16, 10, "TOMABYTE", 0x0000, 0xFFFF, 2);
     // Write "Press any button to start" below it
-    oled_draw_text_scaled(4, 30, "Press any button to start", 0x0000, 0xFFFF, 1);
+    oled_draw_text_scaled(4, 30, "PRESS ANY BUTTON TO START", 0x0000, 0xFFFF, 1);
     
     // Draw initial sprite
     draw_start_screen_sprite();
@@ -611,7 +611,7 @@ void update_screen(){
         // Write "GAME OVER" text in top half
         oled_draw_text_scaled(16, 10, "GAME OVER", 0x0000, 0xFFFF, 2);
         // Write "Press RESET to start over"
-        oled_draw_text_scaled(8, 30, "Press RESET to start over", 0x0000, 0xFFFF, 1);
+        oled_draw_text_scaled(8, 30, "PRESS ANY BUTTON TO START OVER", 0x0000, 0xFFFF, 1);
         
         // Draw dead pet sprite in bottom half
         oled_draw_sprite_scaled(32, 50, pet_sprite_dead, 16, 16, 4);
