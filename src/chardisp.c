@@ -435,6 +435,7 @@ void check_feed_button() {
     if (!gpio_get(FEED_BUTTON)) { // active low
         if (pet_state == STATE_START_SCREEN) { //user presses FEED button to start game
             pet_state = STATE_NORMAL;
+            oled_fill(0xFFFF); // Clear start screen(get rid of the start screen text)
             add_alarm_in_ms(500, animation_callback, NULL, true);
             update_screen();
             start_random_timer();
@@ -469,6 +470,7 @@ void check_reset_button() {
         pet_state = STATE_START_SCREEN;
         health = 100;
         startscreen_frame = 0;
+        oled_fill(0xFFFF); // Clear death screen (get rid of death text)
         update_screen();
         sleep_ms(200); // debounce
     }
